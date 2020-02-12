@@ -4,7 +4,7 @@ import select
 
 BUFF_SIZE = 1024                                                                                                                                                                                                #Create server socket
 
-serverPort = str(sys.argv[1]) # getting the port number
+serverPort = int(sys.argv[1]) # getting the port number
 
 #Making connection to the back-end server
 serverAddr = ''  # localhost
@@ -13,7 +13,7 @@ clientToMainSocket.connect((serverAddr,8888))
 
 #Make proxy server
 
-proxyServer = socke((AF_INET,SOCK_STREAM))
+proxyServer = socket(AF_INET,SOCK_STREAM)
 proxyServer.bind((serverAddr,serverPort))
 proxyServer.listen(5)
 print("Lisetning on the local host, port :",serverPort)
