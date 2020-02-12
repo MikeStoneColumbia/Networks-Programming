@@ -12,3 +12,4 @@ testSentence = "test"
 clientToMainSocket.send(testSentence.encode())
 print(clientToMainSocket.recv(BUFF_SIZE).decode())
 clientToMainSocket.close()
+#test pushing
