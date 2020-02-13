@@ -10,6 +10,8 @@ serverPort = int(sys.argv[1]) # getting the port number
 serverAddr = ''  # localhost
 clientToMainSocket = socket(AF_INET, SOCK_STREAM)
 clientToMainSocket.connect((serverAddr,8888))
+HTTPOK = "HTTP 1.0 200 OK \r\n\r\n"
+
 
 #Make proxy server
 
@@ -32,7 +34,8 @@ while True:
                 print("Message from client: ", message)
                 clientToMainSocket.send(message.encode())
                 message = clientToMainSocket.recv(BUFF_SIZE).decode()
-                print("Message to client: ", message)
+                clientSocket.send(message.encode())
+
             else:
                 readable, writable, errorable = select([],[], [clientSocket])
                 for s in errorable:
