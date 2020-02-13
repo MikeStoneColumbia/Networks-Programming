@@ -14,7 +14,6 @@ HTTPOK = "HTTP 1.0 200 OK \r\n\r\n"
 
 
 #Make proxy server
-
 proxyServer = socket(AF_INET,SOCK_STREAM)
 proxyServer.bind((serverAddr,serverPort))
 proxyServer.listen(5)
