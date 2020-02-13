@@ -20,6 +20,14 @@ proxyServer.bind((serverAddr,serverPort))
 proxyServer.listen(5)
 print("Lisetning on the local host, port :",serverPort)
 
+def getMessage(msg):
+
+	msgStart = msg.find("/")
+	msgEnd = msg.find("HTTP")
+
+	return msg[msgStart+1:msgEnd-1] + "\r\n\r\n"
+
+
 while True:
 
 	# Accept incoming connection
@@ -31,10 +39,13 @@ while True:
         try:
             message = clientSocket.recv(BUFF_SIZE).decode()
             if message:
-                print("Message from client: ", message)
+
+            	message = getMessage(message)  
                 clientToMainSocket.send(message.encode())
                 message = clientToMainSocket.recv(BUFF_SIZE).decode()
+                clientSocket.send(HTTPOK)
                 clientSocket.send(message.encode())
+                clientSocket.close()
 
             else:
                 readable, writable, errorable = select([],[], [clientSocket])
@@ -45,6 +56,9 @@ while True:
             clientSocket.close()
             print("Connection closed")
             break
+
+proxyServer.close()
+clientToMainSocket.close()
 
 #Testing sending and reciving one message Seemd to work.
 
