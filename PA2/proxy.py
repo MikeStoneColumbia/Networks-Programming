@@ -108,8 +108,7 @@ def checkCache(fileName, path, domain, serverPort):
         ## Your code here ##
         
         print("does not exist")
-        sendToServer(serverPort,path,domain)
-        body,responseLine = receiveFromServer(serverPort)
+        body,responseLine = path
 
         parts = fileName.split("/")
         directoryPath = ""
@@ -117,13 +116,6 @@ def checkCache(fileName, path, domain, serverPort):
         for part in parts[:-1]:
             directoryPath += part;
             directoryPath += "/"
-
-        if "301 Moved Permanently" in responseLine:
-            serverPort.close()
-            serverPort = connectSocket(domain,80)
-            newRequest = handle301(responseLine,domain)
-            serverPort.send(newRequest)
-            body,responseLine = receiveFromServer(serverPort)
 
         if(os.path.exists(directoryPath)):
             with open(fileName, "wb") as f:
@@ -142,8 +134,8 @@ def handle301(responseLine, domain):
     location = responseLine.split("Location: ")[1]
     
     url = location.split("\r\n")[0]
-    path = location.split("//")[1]
-    print("Here is the path: " + path)
+    path = url.split("//")[1]
+    #print("Here is the url: " + path)
     response = url.split(domain)[1]
 
     if(response[-1] == "/"):
@@ -152,7 +144,7 @@ def handle301(responseLine, domain):
     else:
         newRequest = "GET " + response + "HTTP/1.0" + "\r\n\r\n"
 
-    return newRequest
+    return newRequest, " "+ path + "index.html"
 
 def getDomain(request):
 
@@ -179,7 +171,7 @@ def main():
 
             # Parse requests
 
-            print(len(clientMessage))
+            #print(len(clientMessage))
 
             path = ""
 
@@ -190,25 +182,30 @@ def main():
                 path = firstLine.split(" ")[1]
                 if(path[-1] == '/'):
                     path += "index.html"
-                print(path[1:])
-                print("The domain is this.",domain)
+                #print(path[1:])
+                #print("The domain is this.",domain)
+
+            else:
+                domain = ""
                 
             ## Your code here #
 
             if (".com" in domain) or (".edu" in domain) or (".org" in domain) :
 
-                print("made it in here")
+                #print("made it in here")
                 webSocket = connectSocket(domain,serverPort) # connected to the website
-                body, responseLine = checkCache(path[1:], clientMessage, domain, webSocket)
-                '''sendToServer(webSocket,clientMessage,domain)
+                
+                sendToServer(webSocket,clientMessage,domain)
                 body,responseLine = receiveFromServer(webSocket)
-
                 if "301 Moved Permanently" in responseLine:
                     webSocket.close()
                     webSocket = connectSocket(domain,serverPort)
-                    newRequest = handle301(responseLine,domain)
+                    newRequest,path = handle301(responseLine,domain)
                     webSocket.send(newRequest)
-                    body,responseLine = receiveFromServer(webSocket)'''
+                    body,responseLine = receiveFromServer(webSocket)
+
+                body, responseLine = checkCache(path[1:], (body,responseLine), domain, webSocket)
+                
 
                 clientSocket.send(responseLine+"\r\n\r\n")
                 clientSocket.send(body+"\r\n\r\n")
@@ -227,7 +224,7 @@ def main():
            ## Your code here ##
 
             clientSocket.close()  # close socket to wait for new request
-            print("socket closed")
+            #print("socket closed")
         else:
             # Or other error handling 
             clientSocket.close()
