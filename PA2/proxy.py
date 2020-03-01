@@ -48,19 +48,7 @@ def receiveFromServer(serverSocket):
     dataLen = BUFF_SIZE
     test = ""
 
-    '''readable, _, _ = select.select([serverSocket], [], [], 0)
-
-    while readable:
-        print("looping")
-        test += serverSocket.recv(BUFF_SIZE).decode(errors='ignore')
-        readable, _, _ = select.select([serverSocket], [], [], 0)
-
-    print("This is the output for test:\n" + test)
-
-    return'''
-
     while 1:
-
         temp = serverSocket.recv(BUFF_SIZE)
         if not temp:
             break
@@ -70,10 +58,11 @@ def receiveFromServer(serverSocket):
     responseLine = test.split("\r\n\r\n")[0]
 
     '''print("The responseLine: ")
+    #print(test.split("\r\n")[0])
     print(responseLine)
-    print("******")
+    print("******")'''
 
-    print("The body: ")
+    '''print("The body: ")
     print(body)
     print("******")'''
 
@@ -109,18 +98,61 @@ def checkCache(fileName, path, domain, serverPort):
     # Check if the request exists in cache
     if os.path.exists(fileName):
        ## Your code here ## 
-
+        print("path does exist")
         with open(fileName, "rb") as f:
             ## Your code here ##
-            f.read('''Your code here''')
+            body = f.read()
+            responseLine = "HTTP/1.1 200 OK"
 
     else:
         ## Your code here ##
-        with open(fileName, "wb") as f:
-            f.write('''Your code here''')
+        
+        print("does not exist")
+        sendToServer(serverPort,path,domain)
+        body,responseLine = receiveFromServer(serverPort)
 
+        parts = fileName.split("/")
+        directoryPath = ""
 
+        for part in parts[:-1]:
+            directoryPath += part;
+            directoryPath += "/"
+
+        if "301 Moved Permanently" in responseLine:
+            serverPort.close()
+            serverPort = connectSocket(domain,80)
+            newRequest = handle301(responseLine,domain)
+            serverPort.send(newRequest)
+            body,responseLine = receiveFromServer(serverPort)
+
+        if(os.path.exists(directoryPath)):
+            with open(fileName, "wb") as f:
+                f.write(body)
+
+        else:    
+            os.makedirs(directoryPath)
+            with open(fileName, "wb") as f:
+                f.write(body)
+
+    serverPort.close()
     return body, responseLine
+
+def handle301(responseLine, domain):
+
+    location = responseLine.split("Location: ")[1]
+    
+    url = location.split("\r\n")[0]
+    path = location.split("//")[1]
+    print("Here is the path: " + path)
+    response = url.split(domain)[1]
+
+    if(response[-1] == "/"):
+        newRequest = "GET " + response + "index.html " + "HTTP/1.0" + "\r\n\r\n"
+    
+    else:
+        newRequest = "GET " + response + "HTTP/1.0" + "\r\n\r\n"
+
+    return newRequest
 
 def getDomain(request):
 
@@ -137,33 +169,58 @@ def main():
     while True:
         clientSocket, clientAddr = proxySocket.accept()  # Accept a connection
         
-        readable, _, _ = select.select([clientSocket], [], [], 0)
+        readable, _, _ = select.select([clientSocket], [], [], 0.5)
 
         if readable:
             # Receive 1024 bytes from client
 
             clientMessage = clientSocket.recv(BUFF_SIZE).decode(errors='ignore')
-            print("\nClient message : \n****\n" + clientMessage + "\n****\n" )
+            #print("\nClient message : \n****\n" + clientMessage + "\n****\n" )
 
             # Parse requests
 
-            request = clientMessage.split(" ")[1]  # first line is "GET /path HTTP/1.0\r\n" so we want /path/
-            domain = getDomain(request) #gets us the domain we are trying to connect to.
-            print("The domain is this.",domain)
+            print(len(clientMessage))
+
+            path = ""
+
+            if(len(clientMessage) > 0):
+                request = clientMessage.split(" ")[1]  # first line is "GET /path HTTP/1.0\r\n" so we want /path/
+                domain = getDomain(request) #gets us the domain we are trying to connect to.
+                firstLine = clientMessage.split("\r\n")[0]
+                path = firstLine.split(" ")[1]
+                if(path[-1] == '/'):
+                    path += "index.html"
+                print(path[1:])
+                print("The domain is this.",domain)
+                
             ## Your code here #
 
-            if("favicon" not in domain):
+            if (".com" in domain) or (".edu" in domain) or (".org" in domain) :
 
-                webSocket = connectSocket("crap",serverPort) # connected to the website
-                break
-                sendToServer(webSocket,clientMessage,domain)
+                print("made it in here")
+                webSocket = connectSocket(domain,serverPort) # connected to the website
+                body, responseLine = checkCache(path[1:], clientMessage, domain, webSocket)
+                '''sendToServer(webSocket,clientMessage,domain)
                 body,responseLine = receiveFromServer(webSocket)
+
+                if "301 Moved Permanently" in responseLine:
+                    webSocket.close()
+                    webSocket = connectSocket(domain,serverPort)
+                    newRequest = handle301(responseLine,domain)
+                    webSocket.send(newRequest)
+                    body,responseLine = receiveFromServer(webSocket)'''
+
                 clientSocket.send(responseLine+"\r\n\r\n")
                 clientSocket.send(body+"\r\n\r\n")
+                
+
+
+            else:
+                clientSocket.send("HTTP/1.1 200 OK\r\n\r\n")
 
             
 
-           # body, responseLine = checkCache(sysPath, path, domain, serverPort)
+           
 
             # Send data back to client
             
