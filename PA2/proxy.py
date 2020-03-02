@@ -6,6 +6,7 @@ Computer Networks Spring 2020
 
 from socket import *
 from re import *
+from datetime import datetime
 import select
 import sys
 import os
@@ -14,6 +15,8 @@ BUFF_SIZE = 1024
 
 userPort = int(sys.argv[1])
 serverAddr = ''
+
+print(datetime.now())
 
 def sendToServer(serverSocket, request, domain):
     # Send GET request to server socket
@@ -98,16 +101,21 @@ def checkCache(fileName, path, domain, serverPort):
     # Check if the request exists in cache
     if os.path.exists(fileName):
        ## Your code here ## 
-        print("path does exist")
+        #print("path does exist")
         with open(fileName, "rb") as f:
             ## Your code here ##
-            body = f.read()
+            next(f)
+
+            body = ""
+
+            for line in f:
+                body += line
             responseLine = "HTTP/1.1 200 OK"
 
     else:
         ## Your code here ##
         
-        print("does not exist")
+        #print("does not exist")
         body,responseLine = path
 
         parts = fileName.split("/")
@@ -119,11 +127,13 @@ def checkCache(fileName, path, domain, serverPort):
 
         if(os.path.exists(directoryPath)):
             with open(fileName, "wb") as f:
+                f.write(str(datetime.now())+"\n")
                 f.write(body)
 
         else:    
             os.makedirs(directoryPath)
             with open(fileName, "wb") as f:
+                f.write(str(datetime.now())+"\n")
                 f.write(body)
 
     serverPort.close()
@@ -135,7 +145,8 @@ def handle301(responseLine, domain):
     
     url = location.split("\r\n")[0]
     path = url.split("//")[1]
-    #print("Here is the url: " + path)
+    #
+    ("Here is the url: " + path)
     response = url.split(domain)[1]
 
     if(response[-1] == "/"):
