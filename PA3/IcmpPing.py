@@ -16,7 +16,6 @@ def checksum(string):
 
 	while count < countTo:
 		thisVal = string[count+1] * 256 + string[count] 
-		print(thisVal)
 		csum = csum + thisVal 
 		csum = csum & 0xffffffff  
 		count = count + 2
@@ -93,7 +92,7 @@ def sendOnePing(mySocket, destAddr, ID):
 	else:
 		myChecksum = htons(myChecksum)
 		
-	header = struct.pack("BBHHHs", ICMP_ECHO_REQUEST, 0, myChecksum, ID, 1)
+	header = struct.pack("BBHHH", ICMP_ECHO_REQUEST, 0, myChecksum, ID, 1)
 	packet = header + data
 	
 	mySocket.sendto(packet, (destAddr, 1)) # AF_INET address must be tuple, not string
@@ -120,13 +119,14 @@ def ping(host, timeout=1):
 	print("Pinging " + dest + " using Python:")
 	print("")
 	# Send ping requests to a server separated by approximately one second
-	for i in range(NUM_PACKETS):  
+	for i in range(NUM_PACKETS): # loop 3 times 
 		delay = doOnePing(dest, timeout)
 		print(delay)
 		time.sleep(1)# one second
 	return delay
 	
 if __name__ == '__main__':	
-	ping("google.com")
-	#ping("localhost")
+	ping("Ozbargain.com.au")
+	ping("localhost")
+	ping("www.google.com")
 
